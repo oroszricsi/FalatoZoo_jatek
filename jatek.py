@@ -64,4 +64,71 @@ questions = [
     {"question": "A kutyák miért ásnak a fekhelyükön?",
      "options": ["Játék", "Fészekkészítés", "Elbújni", "Hűteni magukat"], "answer": 1},
 ]
+def draw_text(text, font, color, surface, x, y):
+    lines = text.split('\n')
+    for i, line in enumerate(lines):
+        rendered = font.render(line, True, color)
+        surface.blit(rendered, (x, y + i * 32))
 
+def draw_button(text, rect, state_color):
+    pygame.draw.rect(screen, state_color, rect, border_radius=12)
+    pygame.draw.rect(screen, BLACK, rect, width=2, border_radius=12)
+    draw_text(text, SMALL_FONT, BLACK, screen, rect.x + 15, rect.y + 15)
+
+def show_question(q, idx, selected=None):
+    screen.fill(WHITE)
+    draw_text(f"{idx+1}/5. kérdés", BIG_FONT, PRIMARY, screen, 60, 30)
+    draw_text(q["question"], FONT, BLACK, screen, 60, 100)
+
+    buttons = []
+    mouse = pygame.mouse.get_pos()
+    for i, option in enumerate(q["options"]):
+        rect = pygame.Rect(100, 180 + i * 90, 800, 70)
+        if selected is not None:
+            if i == q["answer"]:
+                color = CORRECT
+            elif i == selected:
+                color = WRONG
+            else:
+                color = NEUTRAL
+        else:
+            color = HOVER if rect.collidepoint(mouse) else NEUTRAL
+        draw_button(f"{chr(65+i)}) {option}", rect, color)
+        buttons.append(rect)
+    pygame.display.flip()
+    return buttons
+
+def show_result(score):
+    screen.fill(WHITE)
+    draw_text("Kvíz vége!", BIG_FONT, PRIMARY, screen, 380, 250)
+    draw_text(f"Eredmény: {score} / 5", FONT, BLACK, screen, 390, 320)
+    pygame.display.flip()
+    pygame.time.wait(5000)
+    pygame.quit()
+    sys.exit()
+
+
+random.shuffle(questions)
+selected_questions = questions[:5]
+score = 0
+
+for idx, q in enumerate(selected_questions):
+    selected = None
+    answered = False
+    while not answered:
+        buttons = show_question(q, idx, selected)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: pygame.quit(); sys.exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                for i, btn in enumerate(buttons):
+                    if btn.collidepoint(event.pos):
+                        selected = i
+                        if i == q["answer"]:
+                            score += 1
+                        show_question(q, idx, selected)
+                        pygame.display.flip()
+                        pygame.time.wait(1500)
+                        answered = True
+        clock.tick(30)
+
+show_result(score)
