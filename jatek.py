@@ -1,6 +1,7 @@
 import pygame
 import random
 import sys
+import math
 
 pygame.init()
 WIDTH, HEIGHT = 1000, 700
@@ -103,7 +104,9 @@ def show_result(score):
     draw_text("Kvíz vége!", BIG_FONT, PRIMARY, screen, 380, 250)
     draw_text(f"Eredmény: {score} / 5", FONT, BLACK, screen, 390, 320)
     pygame.display.flip()
-    pygame.time.wait(5000)
+    pygame.time.wait(3000)
+    if score == 5:
+        spin_wheel()
     pygame.quit()
     sys.exit()
 
@@ -130,5 +133,60 @@ for idx, q in enumerate(selected_questions):
                         pygame.time.wait(1500)
                         answered = True
         clock.tick(30)
+def spin_wheel():
+    prizes = ["Plüss nyuszi", "Kutyaeledel", "10% kupon", "Meglepetés ajándék", "Semmi 😢", "Ajándék utalvány"]
+    angle = 0
+    spinning = True
+    selected_prize = None
+
+    while spinning:
+        screen.fill(WHITE)
+        draw_text("Gratulálunk! Megforgathatod a szerencsekereket!", FONT, PRIMARY, screen, 200, 30)
+
+        center = (WIDTH // 2, HEIGHT // 2)
+        radius = 200
+        slice_angle = 360 / len(prizes)
+
+        for i, prize in enumerate(prizes):
+            start_angle = math.radians(angle + i * slice_angle)
+            end_angle = math.radians(angle + (i + 1) * slice_angle)
+            color = pygame.Color(0)
+            color.hsva = (i * 360 / len(prizes), 85, 100, 100)
+
+            # rajzoljuk ki a szeletet
+            points = [center]
+            for j in range(30):
+                t = j / 30
+                a = start_angle + (end_angle - start_angle) * t
+                x = center[0] + radius * math.cos(a)
+                y = center[1] + radius * math.sin(a)
+                points.append((x, y))
+            pygame.draw.polygon(screen, color, points)
+
+            # nyeremény szöveg
+            text_angle = math.radians(angle + (i + 0.5) * slice_angle)
+            text_x = center[0] + (radius - 60) * math.cos(text_angle)
+            text_y = center[1] + (radius - 60) * math.sin(text_angle)
+            prize_surf = SMALL_FONT.render(prize, True, BLACK)
+            prize_rect = prize_surf.get_rect(center=(text_x, text_y))
+            screen.blit(prize_surf, prize_rect)
+
+        pygame.draw.circle(screen, WHITE, center, 40)
+        pygame.draw.polygon(screen, BLACK, [(center[0], center[1] - radius - 20), (center[0] - 20, center[1] - radius + 20), (center[0] + 20, center[1] - radius + 20)])
+
+        pygame.display.flip()
+        pygame.time.delay(30)
+        angle += 5
+        if angle >= 360 * random.randint(5, 8):
+            spinning = False
+            selected_index = int(((360 - angle % 360) % 360) / slice_angle) % len(prizes)
+            selected_prize = prizes[selected_index]
+
+    pygame.time.delay(1000)
+    screen.fill(WHITE)
+    draw_text("A nyereményed:", BIG_FONT, PRIMARY, screen, 360, 280)
+    draw_text(selected_prize, BIG_FONT, CORRECT, screen, 400, 350)
+    pygame.display.flip()
+    pygame.time.wait(5000)
 
 show_result(score)
